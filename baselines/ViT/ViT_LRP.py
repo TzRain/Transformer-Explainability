@@ -130,9 +130,9 @@ class Attention(nn.Module):
         return self.attn_gradients
 
     def forward(self, x):
-        b, n, _, h = *x.shape, self.num_heads
-        qkv = self.qkv(x)
-        q, k, v = rearrange(qkv, 'b n (qkv h d) -> qkv b h n d', qkv=3, h=h)
+        b, n, _, h = *x.shape, self.num_heads # 1，197 ,768 ,12
+        qkv = self.qkv(x) #Linear torch.Size([1, 197, 768]) -> torch.Size([1, 197, 2304])
+        q, k, v = rearrange(qkv, 'b n (qkv h d) -> qkv b h n d', qkv=3, h=h) # torch.Size([1, 12, 197, 64])
 
         self.save_v(v)
 
@@ -193,9 +193,9 @@ class Block(nn.Module):
         self.clone1 = Clone()
         self.clone2 = Clone()
 
-    def forward(self, x):
+    def forward(self, x): # torch.Size([1, 197, 768])
         x1, x2 = self.clone1(x, 2)
-        x = self.add1([x1, self.attn(self.norm1(x2))])
+        x = self.add1([x1, self.attn(self.norm1(x2))]) # Rest-Net 
         x1, x2 = self.clone2(x, 2)
         x = self.add2([x1, self.mlp(self.norm2(x2))])
         return x
@@ -228,11 +228,11 @@ class PatchEmbed(nn.Module):
         self.proj = Conv2d(in_chans, embed_dim, kernel_size=patch_size, stride=patch_size)
 
     def forward(self, x):
-        B, C, H, W = x.shape
+        B, C, H, W = x.shape #[1,3,224,224]
         # FIXME look at relaxing size constraints
         assert H == self.img_size[0] and W == self.img_size[1], \
             f"Input image size ({H}*{W}) doesn't match model ({self.img_size[0]}*{self.img_size[1]})."
-        x = self.proj(x).flatten(2).transpose(1, 2)
+        x = self.proj(x).flatten(2).transpose(1, 2) #torch.Size([1, 196, 768])
         return x
 
     def relprop(self, cam, **kwargs):
@@ -302,13 +302,13 @@ class VisionTransformer(nn.Module):
     def no_weight_decay(self):
         return {'pos_embed', 'cls_token'}
 
-    def forward(self, x):
+    def forward(self, x): # torch.Size([1, 3, 224, 224])
         B = x.shape[0]
-        x = self.patch_embed(x)
-
+        x = self.patch_embed(x) # Conv2d(3, 768, kernel_size=(16, 16), stride=(16, 16)) [1, 3, 224, 224] => [1, 196, 768]
+        #? 在输入头部添加[cls]
         cls_tokens = self.cls_token.expand(B, -1, -1)  # stole cls_tokens impl from Phil Wang, thanks
-        x = torch.cat((cls_tokens, x), dim=1)
-        x = self.add([x, self.pos_embed])
+        x = torch.cat((cls_tokens, x), dim=1) #torch.Size([1, 197, 768])
+        x = self.add([x, self.pos_embed]) # 添加pos_embedding
 
         x.register_hook(self.save_inp_grad)
 
