@@ -93,7 +93,7 @@ class AdaptiveAvgPool2d(nn.AdaptiveAvgPool2d, RelPropSimple):
 class AvgPool2d(nn.AvgPool2d, RelPropSimple):
     pass
 
-# 改写Add层
+# 改写的Add层 添加RelProp相关操作
 class Add(RelPropSimple):
     def forward(self, inputs):
         return torch.add(*inputs)
