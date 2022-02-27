@@ -46,7 +46,7 @@ class RelProp(nn.Module):
         return R
 
 class RelPropSimple(RelProp):
-    def relprop(self, R, alpha):
+    def relprop(self, R, alpha): #使用 Taylor 分解的方式
         Z = self.forward(self.X)
         S = safe_divide(R, Z)
         C = self.gradprop(Z, self.X, S)
@@ -93,7 +93,7 @@ class AdaptiveAvgPool2d(nn.AdaptiveAvgPool2d, RelPropSimple):
 class AvgPool2d(nn.AvgPool2d, RelPropSimple):
     pass
 
-
+# 改写Add层
 class Add(RelPropSimple):
     def forward(self, inputs):
         return torch.add(*inputs)

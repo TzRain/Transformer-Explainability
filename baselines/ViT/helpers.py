@@ -83,7 +83,7 @@ def resume_checkpoint(model, checkpoint_path, optimizer=None, loss_scaler=None, 
         _logger.error("No checkpoint found at '{}'".format(checkpoint_path))
         raise FileNotFoundError()
 
-
+# in_chans : input_channels
 def load_pretrained(model, cfg=None, num_classes=1000, in_chans=3, filter_fn=None, strict=True):
     if cfg is None:
         cfg = getattr(model, 'default_cfg')

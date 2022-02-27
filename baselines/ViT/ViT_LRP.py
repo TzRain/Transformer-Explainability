@@ -142,7 +142,7 @@ class Attention(nn.Module):
         attn = self.attn_drop(attn)
 
         self.save_attn(attn)
-        attn.register_hook(self.save_attn_gradients)
+        attn.register_hook(self.save_attn_gradients) #
 
         out = self.matmul2([attn, v])
         out = rearrange(out, 'b h n d -> b n (h d)')
@@ -324,7 +324,9 @@ class VisionTransformer(nn.Module):
     def relprop(self, cam=None,method="transformer_attribution", is_ablation=False, start_layer=0, **kwargs):
         # print(kwargs)
         # print("conservation 1", cam.sum())
-        cam = self.head.relprop(cam, **kwargs)
+        #* input: one_hot (1,C) C:number of Classes
+        #* MLP 
+        cam = self.head.relprop(cam, **kwargs) 
         cam = cam.unsqueeze(1)
         cam = self.pool.relprop(cam, **kwargs)
         cam = self.norm.relprop(cam, **kwargs)
@@ -333,6 +335,8 @@ class VisionTransformer(nn.Module):
 
         # print("conservation 2", cam.sum())
         # print("min", cam.min())
+        
+        # 下面给出了不同方法的效果
 
         if method == "full":
             (cam, _) = self.add.relprop(cam, **kwargs)
@@ -353,7 +357,7 @@ class VisionTransformer(nn.Module):
             cam = cam[:, 0, 1:]
             return cam
         
-        # our method, method name grad is legacy
+        #* our method, method name grad is legacy
         elif method == "transformer_attribution" or method == "grad":
             cams = []
             for blk in self.blocks:

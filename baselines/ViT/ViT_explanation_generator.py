@@ -26,16 +26,16 @@ class LRP:
         output = self.model(input)
         kwargs = {"alpha": 1}
         if index == None:
-            index = np.argmax(output.cpu().data.numpy(), axis=-1)
+            index = np.argmax(output.cpu().data.numpy(), axis=-1) #取之前预测的最大值
 
         one_hot = np.zeros((1, output.size()[-1]), dtype=np.float32)
         one_hot[0, index] = 1
         one_hot_vector = one_hot
         one_hot = torch.from_numpy(one_hot).requires_grad_(True)
-        one_hot = torch.sum(one_hot.cuda() * output)
+        one_hot = torch.sum(one_hot.cuda() * output) #* 预测结果值
 
         self.model.zero_grad()
-        one_hot.backward(retain_graph=True)
+        one_hot.backward(retain_graph=True) #* 从one_hot开始反向传播
 
         return self.model.relprop(torch.tensor(one_hot_vector).to(input.device), method=method, is_ablation=is_ablation,
                                   start_layer=start_layer, **kwargs)
